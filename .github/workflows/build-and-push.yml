@@ -33,7 +33,13 @@ jobs:
       - name: Build with Maven
         run: mvn -B package --file pom.xml -Dmaven.test.skip=true
         # 注意：确保你的 pom.xml 会生成 target/*.jar
-
+      - name: Debug secrets (REMOVE AFTER DEBUG!)
+        run: |
+          echo "Username:  $ {{ secrets.DOCKERHUB_USERNAME }}"
+          echo "Token length:  $ {#DOCKERHUB_TOKEN}"
+        env:
+          DOCKERHUB_TOKEN:  $ {{ secrets.DOCKERHUB_TOKEN }}
+          
       # 5. 登录 Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
