@@ -10,50 +10,51 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 检出代码
-      - name: Checkout code
-        uses: actions/checkout@v4
+      # # 1. 检出代码
+      # - name: Checkout code
+      #   uses: actions/checkout@v4
 
-      # 2. 设置 JDK 17
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
+      # # 2. 设置 JDK 17
+      # - name: Set up JDK 17
+      #   uses: actions/setup-java@v4
+      #   with:
+      #     java-version: '17'
+      #     distribution: 'temurin'
 
-      # 3. 缓存 Maven 依赖（可选，加速构建）
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ～/.m2/repository
-          key:  $ {{ runner.os }}-m2- $ {{ hashFiles('**/pom.xml') }}
-          restore-keys:  $ {{ runner.os }}-m2
+      # # 3. 缓存 Maven 依赖（可选，加速构建）
+      # - name: Cache Maven packages
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ～/.m2/repository
+      #     key:  $ {{ runner.os }}-m2- $ {{ hashFiles('**/pom.xml') }}
+      #     restore-keys:  $ {{ runner.os }}-m2
 
       # 4. 使用 Maven 构建项目（生成 JAR）
-      - name: Build with Maven
-        run: mvn -B package --file pom.xml -Dmaven.test.skip=true
+      # - name: Build with Maven
+      #   run: mvn -B package --file pom.xml -Dmaven.test.skip=true
         # 注意：确保你的 pom.xml 会生成 target/*.jar
+        
       - name: Debug secrets (REMOVE AFTER DEBUG!)
         run: |
-          echo "Username:  $ {{ secrets.DOCKERHUB_USERNAME }}"
-          echo "Token length:  $ {#DOCKERHUB_TOKEN}"
+          echo "Username:  ${{ secrets.DOCKERHUB_USERNAME }}"
+          echo "Token length:  ${#DOCKERHUB_TOKEN}"
         env:
-          DOCKERHUB_TOKEN:  $ {{ secrets.DOCKERHUB_TOKEN }}
+          DOCKERHUB_TOKEN:  ${{ secrets.DOCKERHUB_TOKEN }}
           
-      # 5. 登录 Docker Hub
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username:  $ {{ secrets.DOCKERHUB_USERNAME }}
-          password:  $ {{ secrets.DOCKERHUB_TOKEN }}
+      # # 5. 登录 Docker Hub
+      # - name: Log in to Docker Hub
+      #   uses: docker/login-action@v3
+      #   with:
+      #     username:  $ {{ secrets.DOCKERHUB_USERNAME }}
+      #     password:  $ {{ secrets.DOCKERHUB_TOKEN }}
 
-      # 6. 构建并推送 Docker 镜像
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-             $ {{ secrets.DOCKERHUB_USERNAME }}/helm-proxy:latest
-             $ {{ secrets.DOCKERHUB_USERNAME }}/helm-proxy: $ {{ github.sha }}
+      # # 6. 构建并推送 Docker 镜像
+      # - name: Build and push Docker image
+      #   uses: docker/build-push-action@v6
+      #   with:
+      #     context: .
+      #     file: ./Dockerfile
+      #     push: true
+      #     tags: |
+      #        $ {{ secrets.DOCKERHUB_USERNAME }}/helm-proxy:latest
+      #        $ {{ secrets.DOCKERHUB_USERNAME }}/helm-proxy: $ {{ github.sha }}
