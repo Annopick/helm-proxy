@@ -24,9 +24,9 @@ services:
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/helm-proxy?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-      SPRING_DATASOURCE_USERNAME: helm_user
-      SPRING_DATASOURCE_PASSWORD: HelmProxy@2026!
+      DB_URL: jdbc:mysql://mysql:3306/helm-proxy?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      DB_USERNAME: helm_user
+      DB_PASSWORD: HelmProxy@2026!
       TZ: Asia/Shanghai
     networks:
       - helm-proxy
