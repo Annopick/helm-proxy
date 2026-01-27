@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helm Proxy管理器</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: #2c3e50; color: white; padding: 20px 0; margin-bottom: 30px; }
+        header h1 { text-align: center; font-size: 24px; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; transition: background 0.3s; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-success:hover { background: #219a52; }
+        .btn-secondary { background: #95a5a6; color: white; }
+        .btn-secondary:hover { background: #7f8c8d; }
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #34495e; color: white; font-weight: 500; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        tr:hover { background: #f0f0f0; }
+        .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-failed { background: #f8d7da; color: #721c24; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .toggle { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: 0.4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; transition: 0.4s; border-radius: 50%; }
+        input:checked + .slider { background: #27ae60; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 100%; max-width: 500px; box-shadow: 0 5px 30px rgba(0,0,0,0.3); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h2 { font-size: 20px; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
+        .close-btn:hover { color: #333; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #3498db; }
+        .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .actions { display: flex; gap: 5px; }
+        .info-box { background: #e8f4f8; border: 1px solid #b8daff; border-radius: 4px; padding: 15px; margin-top: 20px; }
+        .info-box h3 { font-size: 16px; margin-bottom: 10px; }
+        .info-box code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+        .toast { position: fixed; bottom: 20px; right: 20px; padding: 15px 25px; border-radius: 4px; color: white; opacity: 0; transition: opacity 0.3s; z-index: 2000; }
+        .toast.show { opacity: 1; }
+        .toast-success { background: #27ae60; }
+        .toast-error { background: #e74c3c; }
+        .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid #fff; border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .empty-state { text-align: center; padding: 40px; color: #999; }
+    </style>
+</head>
+<body>
+    <header><h1>Helm Proxy管理器</h1></header>
+    <div class="container">
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="openModal()">添加仓库</button>
+            <button class="btn btn-secondary" onclick="loadRepositories()">刷新</button>
+        </div>
+        <table>
+            <thead>
+                <tr><th>ID</th><th>仓库名称</th><th>仓库URL</th><th>状态</th><th>最近同步时间</th><th>是否启用</th><th>操作</th></tr>
+            </thead>
+            <tbody id="repo-table">
+                <tr><td colspan="7" class="empty-state">加载中...</td></tr>
+            </tbody>
+        </table>
+        <div class="info-box">
+            <h3>使用方法</h3>
+            <p>添加本仓库到你的Helm中:</p>
+            <p><code>helm repo add helm-proxy <span id="repo-url"></span></code></p>
+            <p><code>helm repo update</code></p>
+            <p><code>helm search repo helm-proxy</code></p>
+        </div>
+    </div>
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">添加需要代理的仓库</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="repo-form" onsubmit="saveRepository(event)">
+                <input type="hidden" id="repo-id">
+                <div class="form-group">
+                    <label for="repo-name">仓库名称(必输)</label>
+                    <input type="text" id="repo-name" required placeholder="例如:bitnami">
+                </div>
+                <div class="form-group">
+                    <label for="repo-url-input">仓库URL(必输)</label>
+                    <input type="url" id="repo-url-input" required placeholder="例如:https://charts.bitnami.com/bitnami">
+                </div>
+                <div class="form-group">
+                    <label for="repo-desc">仓库描述</label>
+                    <textarea id="repo-desc" rows="3" placeholder="描述这个仓库"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-primary" id="submit-btn">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="toast" class="toast"></div>
+    <script src="/js/app.js"></script>
+</body>
+</html>
