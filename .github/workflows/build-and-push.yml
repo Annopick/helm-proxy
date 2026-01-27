@@ -49,5 +49,5 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-             ${{ secrets.DOCKERHUB_USERNAME }}/helm-proxy:latest
-             ${{ secrets.DOCKERHUB_USERNAME }}/helm-proxy: $ {{ github.sha }}
+             veater/helm-proxy:latest
+             veater/helm-proxy:${{ github.sha }}
