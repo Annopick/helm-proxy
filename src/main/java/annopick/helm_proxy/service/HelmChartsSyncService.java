@@ -5,6 +5,7 @@ import annopick.helm_proxy.entity.HelmChartsId;
 import annopick.helm_proxy.entity.HelmRepository;
 import annopick.helm_proxy.repository.HelmChartsRepository;
 import annopick.helm_proxy.repository.HelmRepositoryRepository;
+import annopick.helm_proxy.utils.URLProcessorUtil;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -89,8 +90,12 @@ public class HelmChartsSyncService {
                     HelmCharts chart = new HelmCharts();
                     HelmChartsId id = new HelmChartsId(chartName, (String) versionData.get("version"), repo.getId());
                     chart.setId(id);
-                    chart.setDetailInfo(jsonMapper.writeValueAsString(versionData));
                     chart.setLocalAppName(repo.getName() + "-" + chartName);
+
+                    // 应对charts下载链接不是完整URL的情况，实现自动补全路径
+                    URLProcessorUtil.processUrls(versionData, repo);
+                    chart.setDetailInfo(jsonMapper.writeValueAsString(versionData));
+
                     charts.add(chart);
                 }
             }
