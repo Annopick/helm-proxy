@@ -2,8 +2,12 @@ name: Build and Push Java App to Docker Hub
 
 on:
   push:
-    branches: [ main ]  # 可根据需要调整触发分支
-  # 也可以加上 tag 触发：tags: ['v*']
+    branches: [ main ]
+    paths: 
+      - 'src/**'
+      - 'pom.xml'
+      - 'Dockerfile'
+      - 'app_start.sh'
 
 jobs:
   build-and-push:
@@ -25,7 +29,7 @@ jobs:
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
-          path: ～/.m2/repository
+          path: ~/.m2/repository
           key:  $ {{ runner.os }}-m2- $ {{ hashFiles('**/pom.xml') }}
           restore-keys:  $ {{ runner.os }}-m2
 
