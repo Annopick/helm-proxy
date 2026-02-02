@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +31,7 @@ public class HelmChartsSyncService {
     private final HelmRepositoryRepository repositoryRepository;
     private final HelmChartsRepository chartsRepository;
     private final RestTemplate restTemplate;
-    private final HelmChartsSyncService self;
+    private final ApplicationContext applicationContext;
 
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -121,7 +122,7 @@ public class HelmChartsSyncService {
         } catch (Exception e) {
             log.error("Failed to sync repository {}: {}", repo.getName(), e.getMessage(), e);
             // Use a new transaction to save the error status
-            self.updateRepositoryErrorStatus(repo.getId(), e.getMessage());
+            applicationContext.getBean(HelmChartsSyncService.class).updateRepositoryErrorStatus(repo.getId(), e.getMessage());
             throw new RuntimeException("Sync failed: " + e.getMessage(), e);
         }
     }
