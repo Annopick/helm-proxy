@@ -13,6 +13,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
@@ -29,6 +30,7 @@ public class HelmChartsSyncService {
     private final HelmRepositoryRepository repositoryRepository;
     private final HelmChartsRepository chartsRepository;
     private final RestTemplate restTemplate;
+    private final HelmChartsSyncService self;
 
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -55,7 +57,12 @@ public class HelmChartsSyncService {
         HelmRepository repo = repositoryRepository.findById(repositoryId)
                 .orElseThrow(() -> new IllegalArgumentException("Repository not found: " + repositoryId));
 
-        syncRepositoryInternal(repo);
+        try {
+            syncRepositoryInternal(repo);
+        } catch (Exception e) {
+            // Error handling is done in syncRepositoryInternal, just propagate
+            throw e;
+        }
     }
 
     @Transactional
@@ -102,6 +109,8 @@ public class HelmChartsSyncService {
 
             chartsRepository.saveAll(charts);
             log.info("成功从[{}]同步{}个制品", repo.getName(), charts.size());
+            
+            // Update repository status after successful sync
             repo.setLastSyncTime(LocalDateTime.now());
             repo.setSyncStatus(HelmRepository.SyncStatus.SUCCESS);
             repo.setSyncError(null);
@@ -111,11 +120,21 @@ public class HelmChartsSyncService {
 
         } catch (Exception e) {
             log.error("Failed to sync repository {}: {}", repo.getName(), e.getMessage(), e);
+            // Use a new transaction to save the error status
+            self.updateRepositoryErrorStatus(repo.getId(), e.getMessage());
+            throw new RuntimeException("Sync failed: " + e.getMessage(), e);
+        }
+    }
+    
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void updateRepositoryErrorStatus(Long repoId, String errorMessage) {
+        HelmRepository repo = repositoryRepository.findById(repoId).orElse(null);
+        if (repo != null) {
             repo.setLastSyncTime(LocalDateTime.now());
             repo.setSyncStatus(HelmRepository.SyncStatus.FAILED);
-            repo.setSyncError(e.getMessage());
+            repo.setSyncError(errorMessage);
             repositoryRepository.save(repo);
-            throw new RuntimeException("Sync failed: " + e.getMessage(), e);
+            log.info("Repository error status updated for {}", repo.getName());
         }
     }
 }

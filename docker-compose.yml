@@ -12,6 +12,8 @@ services:
       TZ: Asia/Shanghai
     networks:
       - helm-proxy
+    volumes:
+      - mysql_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
       interval: 10s
@@ -28,6 +30,9 @@ services:
       DB_USERNAME: helm_user
       DB_PASSWORD: HelmProxy@2026!
       TZ: Asia/Shanghai
+      HTTP_PROXY: http://192.168.80.2:10909/
+      HTTPS_PROXY: http://192.168.80.2:10909/
+      NO_PROXY: localhost,127.0.0.1,mysql
     networks:
       - helm-proxy
     depends_on:
@@ -37,3 +42,11 @@ services:
 networks:
   helm-proxy:
     driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: './mysql/data'

@@ -2,6 +2,7 @@ package annopick.helm_proxy.service;
 
 import annopick.helm_proxy.dto.HelmRepositoryDTO;
 import annopick.helm_proxy.entity.HelmRepository;
+import annopick.helm_proxy.repository.HelmChartsRepository;
 import annopick.helm_proxy.repository.HelmRepositoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import java.util.Optional;
 public class HelmRepositoryService {
 
     private final HelmRepositoryRepository repositoryRepository;
+    private final HelmChartsRepository chartsRepository;
 
     public List<HelmRepository> findAll() {
         return repositoryRepository.findAll();
@@ -68,7 +70,12 @@ public class HelmRepositoryService {
         HelmRepository repo = repositoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Repository not found: " + id));
 
-        log.info("Deleting repository: {}", repo.getName());
+        log.info("Deleting repository: {} and its associated charts", repo.getName());
+        
+        // Delete all charts associated with this repository
+        chartsRepository.deleteByRepositoryId(id);
+        
+        // Delete the repository itself
         repositoryRepository.delete(repo);
     }
 
