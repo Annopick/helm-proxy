@@ -13,11 +13,9 @@ import java.util.List;
 @Repository
 public interface HelmChartsRepository extends JpaRepository<HelmCharts, HelmChartsId> {
 
-    @Modifying
-    @Query("SELECT c FROM HelmCharts c WHERE c.id.repoId = : repo_id")
-    List<HelmCharts> findByRepositoryId(Long repo_id);
+    @Query("SELECT c FROM HelmCharts c WHERE c.id.repoId = :repo_id")
+    List<HelmCharts> findByRepositoryId(@Param("repo_id") Long repo_id);
 
-    @Modifying
     @Query("SELECT c FROM HelmCharts c WHERE c.enabled = true")
     List<HelmCharts> findAllByRepositoryEnabled();
 
