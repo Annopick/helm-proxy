@@ -33,8 +33,11 @@ public class HelmChartsSyncService {
     private final RestTemplate restTemplate;
     private final ApplicationContext applicationContext;
 
-    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private final ObjectMapper yamlMapper = new ObjectMapper(
+        YAMLFactory.builder()
+            .maxCodePointCount(Integer.MAX_VALUE)
+            .build())
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     private final ObjectMapper jsonMapper = new ObjectMapper(new JsonFactory());
 
